@@ -1,7 +1,7 @@
 # Android 개발 지원자 박준권 입니다.
 
 지금까지 2번의 팀프로젝트를 진행하며, <b>HonNol</b>과 <b>SilverTube</b> App을 만들었습니다.
-<br>
+<br><br>
 <b>[HonNol App 다운로드 QR코드 입니다.]</b>
 
 <img src="https://i.esdrop.com/d/pLNLVMFlkr.jpg.sthumb"  width="100" height="100"> <br> 
