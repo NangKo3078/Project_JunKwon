@@ -1,0 +1,145 @@
+    /* 리뷰 & 리플 */
+    // 리뷰상단 리뷰 별점
+    public void review(final Handler msgHandler, Context context, int channelIdx) {
+        String requestMethod = "POST";
+
+        /* DB 대조 */
+        ContentValues values = new ContentValues();
+        values.put("channelIdx", channelIdx);
+
+        Review review = null;
+        try {
+            JSONObject json = new getSilverTubeDataTask(silverTube_url + "", values, context, requestMethod).execute().get();
+            if (json != null) {
+                Handler handler = msgHandler;
+                Message msg = handler.obtainMessage();
+                msg.what = MSG_REVIEW;
+
+                String rt = json.getString("rt");
+                int total = json.getInt("total");
+                //Log.d("[Review]", "rt : " + rt);
+                //Log.d("[Review]", "total : " + total);
+
+                if (rt.equals("ReviewDetails_OK") && total > 0) {
+                    JSONArray item = json.getJSONArray("item");
+                    //Log.d("[Review]", "item.length() : " + item.length());
+
+                    JSONObject temp = item.getJSONObject(0);
+                    review = new Review();
+                    review.setChannelIdx(temp.getInt("channelIdx"));
+                    review.setGrade(temp.getDouble("grade"));
+                    review.setGradeFive(temp.getInt("gradeFive"));
+                    review.setGradeFour(temp.getInt("gradeFour"));
+                    review.setGradeThree(temp.getInt("gradeThree"));
+                    review.setGradeTwo(temp.getInt("gradeTwo"));
+                    review.setGradeOne(temp.getInt("gradeOne"));
+                    review.setReviewCount(temp.getInt("reviewCount"));
+                } else {    //실패
+                    //Log.d("[Review]", "ReviewDetails_FAIL");
+                }
+                msg.obj = review;   // 결과값 저장
+                handler.sendMessage(msg);
+            } else {
+                //Log.d("[Review]", "json is null");
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 로그인 유저 해당 채널 별점 받아오기
+    public void memberGrade(final Handler msgHandler, Context context, int memberIdx, int channelIdx) {
+        String requestMethod = "POST";
+
+        /* DB 대조 */
+        ContentValues values = new ContentValues();
+        values.put("memberIdx", memberIdx);
+        values.put("channelIdx", channelIdx);
+
+        try {
+            JSONObject json = new getSilverTubeDataTask(silverTube_url + "", values, context, requestMethod).execute().get();
+            if (json != null) {
+                Handler handler = msgHandler;
+                Message msg = handler.obtainMessage();
+                msg.what = MSG_REVIEW_MEMBER_GRADE;
+
+                String rt = json.getString("rt");
+                int total = json.getInt("total");
+                int gradeDay = 0;
+                int grade = -1;
+
+                if (total > 0) {
+                    JSONArray item = json.getJSONArray("item");
+
+                    JSONObject temp = item.getJSONObject(0);
+                    grade = temp.getInt("grade");
+
+                    if(!temp.isNull("logdate")) {
+                        String logdate = temp.getString("logdate");
+                        gradeDay = Integer.parseInt(logdate.substring(logdate.length()-2));
+                    }
+
+                    //Log.d("[MemberGrade]", "gradeDay : " + gradeDay);
+                } else {    //실패
+                    //Log.d("[MemberGrade]", "rt : " + rt);
+                }
+
+                // 결과값 저장
+                msg.obj = rt;
+                msg.arg1 = grade;
+                msg.arg2 = gradeDay;
+
+                handler.sendMessage(msg);
+
+            } else {
+                //Log.d("[MemberGrade]", "json is null");
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 채널에 별점 등록하기
+    public void gradeAppraisement(final Handler msgHandler, Context context, int memberIdx, int channelIdx, int grade) {
+        String requestMethod = "POST";
+
+        /* DB 대조 */
+        ContentValues values = new ContentValues();
+        values.put("memberIdx", memberIdx);
+        values.put("channelIdx", channelIdx);
+        values.put("channelGrade", grade);
+
+        try {
+            JSONObject json = new getSilverTubeDataTask(silverTube_url + "", values, context, requestMethod).execute().get();
+            if (json != null) {
+                Handler handler = msgHandler;
+                Message msg = handler.obtainMessage();
+                msg.what = MSG_REVIEW_GRADE_INSERT;
+
+                String rt = json.getString("rt");
+                int channelGrade = json.getInt("channelGrade");
+
+                //Log.d("[gradeAppraisement]", "rt : " + rt);
+                //Log.d("[gradeAppraisement]", "channelGrade : " + channelGrade);
+
+                msg.obj = rt;   // 결과값 저장
+                handler.sendMessage(msg);
+            } else {
+                //Log.d("[gradeAppraisement]", "json is null");
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }

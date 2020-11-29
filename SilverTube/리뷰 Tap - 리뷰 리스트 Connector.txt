@@ -1,0 +1,103 @@
+    // 리뷰 리스트
+    public void reviewList(final Handler msgHandler, Context context, int channelIdx, int memberIdx, int filterType, int page) {
+        String requestMethod = "POST";
+
+        /* DB 대조 */
+        ContentValues values = new ContentValues();
+        values.put("channelIdx", channelIdx);
+        values.put("memberIdx", memberIdx);
+        values.put("filterType", filterType);
+        values.put("page", page);
+
+        List<ReviewBoard> reviewBoardList = new ArrayList<>();
+        try {
+            JSONObject json = new getSilverTubeDataTask(silverTube_url + "", values, context, requestMethod).execute().get();
+            if (json != null) {
+                Handler handler = msgHandler;
+                Message msg = handler.obtainMessage();
+                msg.what = MSG_REVIEW_LIST;
+
+                String rt = json.getString("rt");
+                int total = json.getInt("total");
+                int totalAll = json.getInt("totalAll");
+
+                if (total > 0) {
+                    JSONArray item = json.getJSONArray("item");
+                    //Log.d("[ReviewBoard]", "item.length() : " + item.length());
+                    for (int i = 0; i < item.length(); i++) {
+                        JSONObject temp = item.getJSONObject(i);
+
+                        ReviewBoard reviewBoard = new ReviewBoard();
+                        reviewBoard.setReviewIdx(temp.getInt("reviewIdx"));
+                        reviewBoard.setChannelIdx(temp.getInt("channelIdx"));
+                        reviewBoard.setUserNickname(temp.getString("userNickname"));
+                        if (!temp.isNull("userImage")) {
+                            reviewBoard.setUserImage(temp.getString("userImage"));
+                        }
+                        reviewBoard.setReviewComment(temp.getString("reviewComment"));
+                        if(!temp.isNull("logdate")) {
+                            String logdate = temp.getString("logdate").substring(0,  temp.getString("logdate").length()-2);
+                            reviewBoard.setLogdate(logdate);
+                        }
+                        reviewBoard.setGrade(temp.getInt("channelGrade"));
+                        reviewBoard.setLove(temp.getInt("love"));
+                        reviewBoard.setHate(temp.getInt("hate"));
+                        reviewBoard.setReplyCount(temp.getInt("replyCount"));
+                        reviewBoard.setMemberIdx(temp.getInt("memberIdx"));
+                        reviewBoard.setRn(temp.getInt("rn"));
+                        reviewBoard.setLoveCheck(temp.getString("loveCheck"));
+                        reviewBoard.setIsUpdate(temp.getInt("isUpdate"));
+
+                        reviewBoardList.add(reviewBoard);
+                    }
+                } else {    //실패
+                    //Log.d("[ReviewBoard]", "rt : " + rt);
+                }
+                msg.obj = reviewBoardList;   // 결과값 저장
+                msg.arg1 = totalAll;
+                handler.sendMessage(msg);
+            } else {
+                //Log.d("[ReviewBoard]", "json is null");
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 리뷰 작성
+    public void reviewInsert(final Handler msgHandler, Context context, ReviewBoard reviewBoard) {
+        String requestMethod = "POST";
+
+        /* DB 대조 */
+        ContentValues values = new ContentValues();
+        values.put("channelIdx", reviewBoard.getChannelIdx());
+        values.put("memberIdx", reviewBoard.getMemberIdx());
+        values.put("reviewComment", reviewBoard.getReviewComment());
+
+        try {
+            JSONObject json = new getSilverTubeDataTask(silverTube_url + "", values, context, requestMethod).execute().get();
+            if (json != null) {
+                Handler handler = msgHandler;
+                Message msg = handler.obtainMessage();
+                msg.what = MSG_REVIEW_INSERT;
+
+                String rt = json.getString("rt");
+                //Log.d("[ReviewInsert]", "rt : " + rt);
+                msg.obj = rt;   // 결과값 저장
+                handler.sendMessage(msg);
+            } else {
+                //Log.d("[ReviewInsert]", "json is null");
+            }
+
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
